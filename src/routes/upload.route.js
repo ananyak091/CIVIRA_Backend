@@ -3,10 +3,10 @@ import multer from "multer";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "../config/r2.config.js";
 
-const router = express.Router();
+const uploadRouter = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload", upload.single("image"), async (req, res) => {
+uploadRouter.post("/upload", upload.single("image"), async (req, res) => {
   const fileKey = `images/${Date.now()}-${req.file.originalname}`;
 
   const command = new PutObjectCommand({
@@ -23,4 +23,4 @@ router.post("/upload", upload.single("image"), async (req, res) => {
   res.json({ url: publicUrl });
 });
 
-export default router;
+export default uploadRouter;

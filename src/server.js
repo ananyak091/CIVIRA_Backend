@@ -4,6 +4,7 @@ import connectDB from "./config/db.config.js";
 import dotenv from "dotenv";
 import uploadRoutes from "./routes/upload.route.js";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.get("/", (req, res) => {
 
 app.use("/api", uploadRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

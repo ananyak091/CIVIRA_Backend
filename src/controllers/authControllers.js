@@ -5,9 +5,10 @@ import jwt from "jsonwebtoken";
 // REGISTER
 export const registerUser = async (req, res) => {
   try {
-    // console.log(req.body);
+    console.log(req.body);
 
     const { name, email, password } = req.body;
+    console.log(name, email, password);
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -19,13 +20,14 @@ export const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("hashPassword", hashedPassword);
 
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
     });
-
+    console.log("user", user);
     res.status(201).json({
       message: "User registered successfully",
       user: user,
@@ -38,6 +40,8 @@ export const registerUser = async (req, res) => {
 // LOGIN
 export const loginUser = async (req, res) => {
   try {
+    console.log("Login body:", req.body);
+
     const { email, password } = req.body;
 
     if (!email || !password) {
