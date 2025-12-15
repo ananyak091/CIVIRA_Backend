@@ -47,3 +47,30 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
+export const getProfile = async(req, res) => {
+  try {
+    console.log("This is user id in get profile",req.userId);
+    const user = await User.findById(req.userId).select(
+      "name email phone gender dob address image"
+    );
+
+    if(!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    })
+  }
+}
