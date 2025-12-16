@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
 
     dob: {
       type: Date,
-      default: null,
+      default: Date.now(),
     },
 
     image: {

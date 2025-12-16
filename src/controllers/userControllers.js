@@ -5,7 +5,7 @@ export const updateProfile = async (req, res) => {
   try {
     console.log("req body in update profile ", req.body);
 
-    const { name, phone, gender, dob } = req.body;
+    const { name, phone, gender, dob, removeImage, image } = req.body;
 
     const address = req.body.address ? JSON.parse(req.body.address) : {};
 
@@ -13,16 +13,33 @@ export const updateProfile = async (req, res) => {
       name,
       phone,
       gender,
-      dob,
+
       address,
     };
+    // dob check
+    if (dob) {
+      const dob = new Date(req.body.dob);
+      const today = new Date();
+
+      if (dob > today) {
+        return res.status(400).json({
+          message: "Date of birth cannot be in the future",
+        });
+      }
+
+      updateData.dob = dob;
+    }
 
     // If image uploaded
     if (req.file) {
       const imageUrl = await uploadToR2(req.file);
       updateData.image = imageUrl; // later replace with R2 URL
     }
-
+    console.log("remove image is ", removeImage);
+    // ✅ Remove image
+    if (removeImage === "true") {
+      updateData.image = "";
+    }
     const user = await User.findByIdAndUpdate(req.userId, updateData, {
       new: true,
     });
@@ -48,14 +65,20 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-export const getProfile = async(req, res) => {
+export const getProfile = async (req, res) => {
   try {
-    console.log("This is user id in get profile",req.userId);
+    // console.log("This is user id in get profile",req.userId);
     const user = await User.findById(req.userId).select(
       "name email phone gender dob address image"
     );
+    console.log("user in get profile : ", user);
 
-    if(!user) {
+    if (!user.image) {
+      user.image =
+        "https://thumbs.dreamstime.com/b/default-avatar-profile-icon-social-media-user-vector-default-avatar-profile-icon-social-media-user-vector-portrait-176194876.jpg";
+    }
+
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -71,6 +94,6 @@ export const getProfile = async(req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error",
-    })
+    });
   }
-}
+};
