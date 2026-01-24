@@ -23,7 +23,7 @@ app.use(
     origin: "*", // or restrict to your frontend Render URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  })
+  }),
 );
 
 // Test route
