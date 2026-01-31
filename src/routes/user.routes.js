@@ -22,9 +22,20 @@ userRouter.post(
 
 // register complaint by user , this will call while submitting the complaint !!
 userRouter.post(
-  "/register-complaints",
+  "/register-complaint",
   authMiddleware,
-  registerComplaintByCitizen,
+  (req, res, next) => {
+    console.log("✅ After auth, before multer");
+    next();
+
+  },
+  upload.array("images", 3),
+  (req, res, next) => {
+    console.log("✅ After upload array, before register complaint");
+    next();
+
+  },
+  registerComplaintByCitizen
 );
 
 // get my complaint - user
