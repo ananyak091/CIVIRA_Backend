@@ -1,4 +1,4 @@
-import User from "../models/user.js";
+import User from "../models/user.model.js";
 import uploadToR2 from "../utils/uploadToR2.js";
 
 // update profile logic
@@ -105,19 +105,29 @@ export const getProfile = async (req, res) => {
 
 // register Complaint By Citizen logic
 
-export const registerComplaintByCitizen = async (err, req, res, next) => {
+export const registerComplaintByCitizen = async (req, res, next) => {
+  
   try {
+    console.log("in register complaint");
+    console.log("request is", req.body);
+    const fd = req.body;
+    console.log("FD is", fd);
+    res.status(200).json({
+      success: true,
+      message: "Registration Successful !!"
+    });
   } catch (error) {
     console.error("register Complaint error:", error);
     res.status(500).json({
       success: false,
+      error: error,
       message: "Server error",
     });
   }
 };
 
 // get all user complaints logic goes here
-export const getMycomplaints = async (err, req, res, next) => {
+export const getMycomplaints = async (req, res, next) => {
   try {
   } catch (error) {
     console.error("get my Complaint error:", error);
