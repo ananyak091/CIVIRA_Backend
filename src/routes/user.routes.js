@@ -1,0 +1,33 @@
+import express from "express";
+import {
+  getProfile,
+  updateProfile,
+  registerComplaintByCitizen,
+  getMycomplaints,
+} from "../controllers/user.controller.js";
+import authMiddleware from "../middlewares/authMiddleware.js";
+import upload from "../middlewares/upload.js";
+
+const userRouter = express.Router();
+// get api -> get-profile
+userRouter.get("/get-profile", authMiddleware, getProfile);
+
+// update profile
+userRouter.post(
+  "/update-profile",
+  authMiddleware,
+  upload.single("image"),
+  updateProfile,
+);
+
+// register complaint by user , this will call while submitting the complaint !!
+userRouter.post(
+  "/register-complaints",
+  authMiddleware,
+  registerComplaintByCitizen,
+);
+
+// get my complaint - user
+userRouter.get("/my-complaints", authMiddleware, getMycomplaints);
+
+export default userRouter;

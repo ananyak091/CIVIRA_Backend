@@ -17,3 +17,5 @@ const r2 = new S3Client({
 });
 
 export default r2;
+
+// connection with cloudfare

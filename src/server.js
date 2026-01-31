@@ -3,8 +3,9 @@ import cors from "cors";
 import connectDB from "./config/db.config.js";
 import dotenv from "dotenv";
 import uploadRoutes from "./routes/upload.route.js";
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import imageValidateRoutes from "./routes/imageValidate.routes.js";
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ app.use(
     origin: "*", // or restrict to your frontend Render URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  })
+  }),
 );
 
 // Test route
@@ -32,6 +33,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", uploadRoutes);
+app.use("/api/images/validate", imageValidateRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 

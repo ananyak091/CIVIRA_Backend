@@ -17,3 +17,5 @@ const uploadToR2 = async (file, folder = "images") => {
 };
 
 export default uploadToR2;
+
+// function

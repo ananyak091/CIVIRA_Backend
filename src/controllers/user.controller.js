@@ -1,11 +1,13 @@
 import User from "../models/user.js";
 import uploadToR2 from "../utils/uploadToR2.js";
 
+// update profile logic
 export const updateProfile = async (req, res) => {
   try {
     console.log("req body in update profile ", req.body);
 
     const { name, phone, gender, dob, removeImage, image } = req.body;
+    console.log("req.body in update", req.body);
 
     const address = req.body.address ? JSON.parse(req.body.address) : {};
 
@@ -13,7 +15,6 @@ export const updateProfile = async (req, res) => {
       name,
       phone,
       gender,
-
       address,
     };
     // dob check
@@ -32,6 +33,7 @@ export const updateProfile = async (req, res) => {
 
     // If image uploaded
     if (req.file) {
+      // we will not req.file if there is no upload
       const imageUrl = await uploadToR2(req.file);
       updateData.image = imageUrl; // later replace with R2 URL
     }
@@ -65,11 +67,12 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// get profile logic
 export const getProfile = async (req, res) => {
   try {
     // console.log("This is user id in get profile",req.userId);
     const user = await User.findById(req.userId).select(
-      "name email phone gender dob address image"
+      "name email phone gender dob address image",
     );
     console.log("user in get profile : ", user);
 
@@ -91,6 +94,31 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Get profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// register Complaint By Citizen logic
+
+export const registerComplaintByCitizen = async (err, req, res, next) => {
+  try {
+  } catch (error) {
+    console.error("register Complaint error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// get all user complaints logic goes here
+export const getMycomplaints = async (err, req, res, next) => {
+  try {
+  } catch (error) {
+    console.error("get my Complaint error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
