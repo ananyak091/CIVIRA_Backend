@@ -4,6 +4,7 @@ import {
   updateProfile,
   registerComplaintByCitizen,
   getMycomplaints,
+  getComplaintDetails,
 } from "../controllers/user.controller.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import upload from "../middlewares/upload.js";
@@ -40,5 +41,8 @@ userRouter.post(
 
 // get my complaint - user
 userRouter.get("/my-complaints", authMiddleware, getMycomplaints);
+
+//get my complaint details
+userRouter.get("/my-complaints/:id", authMiddleware, getComplaintDetails);
 
 export default userRouter;

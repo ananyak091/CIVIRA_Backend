@@ -181,6 +181,21 @@ export const registerComplaintByCitizen = async (req, res, next) => {
 // get all user complaints logic goes here
 export const getMycomplaints = async (req, res, next) => {
   try {
+    const complaints = await Complaint.find({ userId: req.userId })
+  .select("category ward landmark address complaint_status additionalNotes assigned_department createdAt")
+  .sort({ createdAt: -1 });
+
+  if (!complaints) {
+      return res.status(404).json({
+        success: false,
+        message: "You have not registered",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      complaints,
+    });
   } catch (error) {
     console.error("get my Complaint error:", error);
     res.status(500).json({
@@ -189,3 +204,35 @@ export const getMycomplaints = async (req, res, next) => {
     });
   }
 };
+
+
+export const getComplaintDetails = async (req, res, next) => {
+  try {
+    const complaintId = req.params.id; // or req.body.id based on your route
+
+    // 1️⃣ Fetch complaint details
+    const complaint_details = await Complaint.findById(complaintId)
+      .select("category ward landmark address complaint_status createdAt");
+
+    if (!complaint_details) {
+      return res.status(404).json({ success: false, message: "Complaint not found" });
+    }
+
+    // 2️⃣ Fetch all evidence linked to this complaint
+    const evidence_details = await Evidence.find({ complaintId })
+      .select("image_url uploaded_at type");
+
+    return res.status(200).json({
+      success: true,
+      complaint: complaint_details,
+      evidence: evidence_details,
+    });
+    
+  } catch (error) {
+    console.error("get my Complaint error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+}
