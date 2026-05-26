@@ -28,7 +28,7 @@ export const imageValidationByML = async (req, res, next) => {
           results,
           message: "ML bypassed (dev mode)",
         });
-      }, 2000); // 2000 ms = 2 seconds
+      }, 4000); // 2000 ms = 2 seconds
     }
 
     // ✅ ML MODE (REAL)
