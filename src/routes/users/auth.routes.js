@@ -6,7 +6,7 @@ import {
   verifyOtp,
   resetPassword,
   continueWithGoogle,
-} from "../controllers/auth.controller.js";
+} from "../../controllers/auth.controller.js";
 
 const authRouter = express.Router();
 

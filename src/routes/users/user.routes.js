@@ -5,9 +5,9 @@ import {
   registerComplaintByCitizen,
   getMycomplaints,
   getComplaintDetails,
-} from "../controllers/user.controller.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import upload from "../middlewares/upload.js";
+} from "#src/controllers/user.controller.js";
+import authMiddleware from "#src/middlewares/authMiddleware.js";
+import upload from "#src/middlewares/upload.js";
 
 const userRouter = express.Router();
 // get api -> get-profile
@@ -28,15 +28,13 @@ userRouter.post(
   (req, res, next) => {
     console.log("✅ After auth, before multer");
     next();
-
   },
   upload.array("images", 3),
   (req, res, next) => {
     console.log("✅ After upload array, before register complaint");
     next();
-
   },
-  registerComplaintByCitizen
+  registerComplaintByCitizen,
 );
 
 // get my complaint - user

@@ -1,8 +1,8 @@
 import express from "express";
 import { Router } from "express";
-import { imageValidationByML } from "../controllers/imageValidation.controller.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import upload from "../middlewares/upload.js";
+import { imageValidationByML } from "#src/controllers/imageValidation.controller.js";
+import authMiddleware from "#src/middlewares/authMiddleware.js";
+import upload from "#src/middlewares/upload.js";
 
 const imageValidationRouter = express.Router();
 
