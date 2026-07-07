@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import AdminOtp from "#src/models/admin/adminOTP.model.js";
+import sendAdminOtp from "#src/utils/sendAdminOtp.js";
 
 /**
  * @desc Admin Login
@@ -6,11 +8,15 @@ import jwt from "jsonwebtoken";
  */
 export const adminLogin = async (req, res) => {
   try {
+    // console.log("inside admin login");
+
     const { email, password } = req.body;
+    // console.log(" admin email", email, password);
+    // console.log("admin_email", process.env.ADMIN_EMAIL, process.env.ADMIN_PASS);
 
     if (
       email !== process.env.ADMIN_EMAIL ||
-      password !== process.env.ADMIN_PASSWORD
+      password !== process.env.ADMIN_PASS
     ) {
       return res.status(401).json({
         success: false,
@@ -18,10 +24,25 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // TODO:
+    //
     // Generate OTP
     // Save OTP
-    // Send OTP to Admin Email
+    // Send OTP to Admin Email TODO:
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    await AdminOtp.findOneAndUpdate(
+      { email },
+      {
+        otp,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+      { upsert: true },
+    );
+
+    console.log("Generated OTP:", otp);
+
+    await sendAdminOtp(email, otp);
+    console.log("email and password verified");
 
     return res.status(200).json({
       success: true,
@@ -44,15 +65,44 @@ export const adminLogin = async (req, res) => {
 
 export const verifyAdminOtp = async (req, res) => {
   try {
-    const { otp } = req.body;
+    const { email, otp } = req.body;
 
-    // TODO:
-    // Verify OTP
+    // Check if OTP exists
+    const otpDoc = await AdminOtp.findOne({ email });
 
+    if (!otpDoc) {
+      return res.status(400).json({
+        success: false,
+        message: "No OTP found. Please login again.",
+      });
+    }
+
+    // Check if OTP has expired
+    if (otpDoc.expiresAt < new Date()) {
+      await AdminOtp.deleteOne({ email });
+
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please login again.",
+      });
+    }
+
+    // Check if OTP matches
+    if (otpDoc.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP.",
+      });
+    }
+
+    // OTP verified, remove it
+    await AdminOtp.deleteOne({ email });
+
+    // Generate JWT
     const token = jwt.sign(
       {
         role: "admin",
-        email: process.env.ADMIN_EMAIL,
+        email,
       },
       process.env.JWT_SECRET,
       {
@@ -66,7 +116,7 @@ export const verifyAdminOtp = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
 
     return res.status(500).json({
       success: false,
