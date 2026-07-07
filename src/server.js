@@ -7,6 +7,7 @@ import authRoutes from "./routes/users/auth.routes.js";
 import userRoutes from "./routes/users/user.routes.js";
 import adminRoutes from "./routes/admin/admin.routes.js";
 import authAdminRoutes from "./routes/admin/admin.auth.routes.js";
+import officerAuthRoutes from "./routes/officer/officer.auth.routes.js";
 import imageValidateRoutes from "./routes/others/imageValidate.routes.js";
 
 dotenv.config();
@@ -42,8 +43,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/admin/auth", authAdminRoutes); // Admin Login + OTP
 app.use("/api/admin", adminRoutes); // Protected Admin APIs
 
-// Officer (later)
-// app.use("/api/officer/auth", officerAuthRoutes);
+// Officer
+app.use("/api/officer/auth", officerAuthRoutes);
 // app.use("/api/officer", officerRoutes);
 
 // Others
