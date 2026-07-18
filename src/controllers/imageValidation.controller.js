@@ -92,7 +92,7 @@ export const imageValidationByML = async (req, res) => {
     // Create temporary file
     const tempPath = path.join(
       os.tmpdir(),
-      `${Date.now()}-${file.originalname}`
+      `${Date.now()}-${file.originalname}`,
     );
 
     fs.writeFileSync(tempPath, file.buffer);
@@ -100,7 +100,7 @@ export const imageValidationByML = async (req, res) => {
     console.log("Temp image:", tempPath);
 
     exec(
-      `py -3.11 src/ml/predict.py "${tempPath}"`,
+      `py src/ml/predict.py "${tempPath}"`,
       async (error, stdout, stderr) => {
         // Delete temp image
         if (fs.existsSync(tempPath)) {
@@ -117,11 +117,7 @@ export const imageValidationByML = async (req, res) => {
           });
         }
 
-        const prediction = stdout
-  .trim()
-  .split("\n")
-  .pop()
-  .trim();
+        const prediction = stdout.trim().split("\n").pop().trim();
 
         console.log("Prediction:", prediction);
 
@@ -130,15 +126,14 @@ export const imageValidationByML = async (req, res) => {
           prediction === "Pothole" ||
           prediction === "street light" ||
           prediction === "Transformer" ||
-          prediction === "water_logging"
-          ;
-
+          prediction === "water_logging";
         if (!valid) {
           return res.json({
             success: true,
             prediction,
             isValid: false,
-            message: "Please upload a Garbage or Pothole or other related image.",
+            message:
+              "Please upload a Garbage or Pothole or other related image.",
           });
         }
 
@@ -151,7 +146,7 @@ export const imageValidationByML = async (req, res) => {
           imageURL,
           isValid: true,
         });
-      }
+      },
     );
   } catch (err) {
     console.log(err);

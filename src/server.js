@@ -6,9 +6,11 @@ import uploadRoutes from "#src/routes/others/upload.route.js";
 import authRoutes from "./routes/users/auth.routes.js";
 import userRoutes from "./routes/users/user.routes.js";
 import adminRoutes from "./routes/admin/admin.routes.js";
+import officerRoutes from "./routes/officer/officer.routes.js";
 import authAdminRoutes from "./routes/admin/admin.auth.routes.js";
 import officerAuthRoutes from "./routes/officer/officer.auth.routes.js";
 import imageValidateRoutes from "./routes/others/imageValidate.routes.js";
+import notificationRoutes from "#src/routes/others/notifications.routes.js";
 
 dotenv.config();
 
@@ -25,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "*", // or restrict to your frontend Render URL
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   }),
 );
@@ -45,11 +47,13 @@ app.use("/api/admin", adminRoutes); // Protected Admin APIs
 
 // Officer
 app.use("/api/officer/auth", officerAuthRoutes);
+app.use("/api/officer", officerRoutes);
 // app.use("/api/officer", officerRoutes);
 
 // Others
 app.use("/api", uploadRoutes);
 app.use("/api/images/validate", imageValidateRoutes);
+app.use("/api/notification", notificationRoutes);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

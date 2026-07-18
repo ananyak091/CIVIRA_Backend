@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import uploadToR2 from "../utils/uploadToR2.js";
 import { Complaint } from "../models/complaints.model.js";
 import Evidence from "../models/evidence.model.js";
+import Officer from "../models/officer/officer.model.js";
 
 // update profile logic
 export const updateProfile = async (req, res) => {
@@ -110,22 +111,50 @@ export const getProfile = async (req, res) => {
 
 export const registerComplaintByCitizen = async (req, res, next) => {
   try {
-    console.log("in register complaint");
-    // console.log("request is", req.body);
     const complaintBody = JSON.parse(req.body.data);
     const metaData = JSON.parse(req.body.meta || "[]");
 
-    // 1️⃣ Create Complaint
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check whether an officer exists
+    const officer = await Officer.findOne({
+      state: complaintBody.state,
+      city: complaintBody.city,
+      wardNo: complaintBody.wardNumber,
+    });
+
+    if (!officer) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "No officer is assigned to this State, City and Ward. Please contact the administrator.",
+      });
+    }
+
+    // Create Complaint
     const newComplaint = await Complaint.create({
       userId: req.userId,
       ward: complaintBody.ward,
+      wardNo: complaintBody.wardNumber,
       landmark: complaintBody.landmark,
       address: complaintBody.address,
       category: complaintBody.category,
       description: complaintBody.description,
       additionalNotes: complaintBody.notes,
+
+      // Save location information
+      state: complaintBody.state,
+      city: complaintBody.city,
+
+      // Assign officer
+      assignedOfficer: officer._id,
     });
-    // STEP 2: Upload images & create Evidence docs
+
     let evidenceIds = [];
 
     if (req.files && req.files.length > 0) {
@@ -139,41 +168,26 @@ export const registerComplaintByCitizen = async (req, res, next) => {
           complaintId: newComplaint._id,
           image_url: imageUrl,
           type: "citizen",
-          // lat: meta.lat,
-          // lng: meta.lng,
-          // accuracy: meta.accuracy,
-          // timestamp: meta.timestamp,
-          // isoTime: meta.isoTime,
         });
 
         evidenceIds.push(evidence._id);
       }
     }
 
-    if (!req.userId) {
-      // if there is no user then please reject request
-      res.status(300).json({
-        success: false,
-        message: "User Not Found",
-      });
-    }
-
-    // STEP 3: Update complaint with evidenceIds
     newComplaint.evidenceIds = evidenceIds;
     await newComplaint.save();
 
-    // STEP 4: Response
     return res.status(201).json({
       success: true,
       message: "Complaint registered successfully",
       newComplaint,
     });
   } catch (error) {
-    console.error("register Complaint error:", error);
-    res.status(500).json({
+    console.error(error);
+
+    return res.status(500).json({
       success: false,
-      error: error,
-      message: "Server error",
+      message: "Server Error",
     });
   }
 };
@@ -239,7 +253,7 @@ export const getMycomplaints = async (req, res) => {
     console.log("Filter:", filter);
     const complaints = await Complaint.find(filter)
       .select(
-        "category ward landmark address complaint_status additionalNotes assigned_department createdAt"
+        "category ward landmark address complaint_status additionalNotes assigned_department createdAt",
       )
       .sort({ createdAt: -1 });
 
@@ -256,29 +270,31 @@ export const getMycomplaints = async (req, res) => {
   }
 };
 
-
 export const getComplaintDetails = async (req, res, next) => {
   try {
     const complaintId = req.params.id; // or req.body.id based on your route
 
     // 1️⃣ Fetch complaint details
-    const complaint_details = await Complaint.findById(complaintId)
-      .select("category ward landmark address complaint_status createdAt");
+    const complaint_details = await Complaint.findById(complaintId).select(
+      "category ward landmark address complaint_status createdAt",
+    );
 
     if (!complaint_details) {
-      return res.status(404).json({ success: false, message: "Complaint not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Complaint not found" });
     }
 
     // 2️⃣ Fetch all evidence linked to this complaint
-    const evidence_details = await Evidence.find({ complaintId })
-      .select("image_url uploaded_at type");
+    const evidence_details = await Evidence.find({ complaintId }).select(
+      "image_url uploaded_at type",
+    );
 
     return res.status(200).json({
       success: true,
       complaint: complaint_details,
       evidence: evidence_details,
     });
-    
   } catch (error) {
     console.error("get my Complaint error:", error);
     res.status(500).json({
@@ -286,4 +302,4 @@ export const getComplaintDetails = async (req, res, next) => {
       message: "Server error",
     });
   }
-}
+};
