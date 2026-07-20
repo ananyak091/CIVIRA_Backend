@@ -40,7 +40,7 @@ export const imageValidationByML = async (req, res) => {
     console.log("OS Platform:", os.platform());
     console.log("Python Command:", pythonCommand);
 
-    const command = `${pythonCommand} src/ml/predict.py "${tempPath}"`;
+    const command = `${pythonCommand} -3.11 src/ml/predict.py "${tempPath}"`;
 
     console.log("Executing Command:");
     console.log(command);

@@ -11,6 +11,7 @@ import authAdminRoutes from "./routes/admin/admin.auth.routes.js";
 import officerAuthRoutes from "./routes/officer/officer.auth.routes.js";
 import imageValidateRoutes from "./routes/others/imageValidate.routes.js";
 import notificationRoutes from "#src/routes/others/notifications.routes.js";
+import dashboardRouter from "./routes/others/dashboard.route.js";
 
 dotenv.config();
 
@@ -54,6 +55,8 @@ app.use("/api/officer", officerRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/images/validate", imageValidateRoutes);
 app.use("/api/notification", notificationRoutes);
+
+app.use("/api/dashboard", dashboardRouter);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
