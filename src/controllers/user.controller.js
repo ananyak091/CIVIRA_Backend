@@ -3,6 +3,7 @@ import uploadToR2 from "../utils/uploadToR2.js";
 import { Complaint } from "../models/complaints.model.js";
 import Evidence from "../models/evidence.model.js";
 import Officer from "../models/officer/officer.model.js";
+import { createAdminNotification } from "#src/controllers/admin/adminNotification.controller.js";
 
 // update profile logic
 export const updateProfile = async (req, res) => {
@@ -109,7 +110,7 @@ export const getProfile = async (req, res) => {
 
 // register Complaint By Citizen logic
 
-export const registerComplaintByCitizen = async (req, res, next) => {
+export const registerComplaintByCitizen = async (req, res) => {
   try {
     const complaintBody = JSON.parse(req.body.data);
     const metaData = JSON.parse(req.body.meta || "[]");
@@ -128,39 +129,45 @@ export const registerComplaintByCitizen = async (req, res, next) => {
       wardNo: complaintBody.wardNumber,
     });
 
-    if (!officer) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "No officer is assigned to this State, City and Ward. Please contact the administrator.",
-      });
-    }
-
     // Create Complaint
     const newComplaint = await Complaint.create({
       userId: req.userId,
+
       ward: complaintBody.ward,
       wardNo: complaintBody.wardNumber,
+
       landmark: complaintBody.landmark,
       address: complaintBody.address,
+
       category: complaintBody.category,
       description: complaintBody.description,
       additionalNotes: complaintBody.notes,
 
-      // Save location information
+      // Location
       state: complaintBody.state,
       city: complaintBody.city,
 
-      // Assign officer
-      assignedOfficer: officer._id,
+      // Officer Assignment
+      assignedOfficer: officer ? officer._id : null,
+
+      complaint_status: officer ? "Registered" : "Waiting for Officer",
     });
 
+    // Notify admin if no officer exists
+    if (!officer) {
+      await createAdminNotification({
+        complaintId: newComplaint._id,
+        title: "Officer Assignment Required",
+        message: `No officer is assigned for ${complaintBody.state}, ${complaintBody.city}, Ward ${complaintBody.ward}, Ward No. ${complaintBody.wardNumber}.`,
+      });
+    }
+
+    // Upload evidence
     let evidenceIds = [];
 
     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        const meta = metaData[i] || {};
 
         const imageUrl = await uploadToR2(file.buffer);
 
@@ -179,7 +186,9 @@ export const registerComplaintByCitizen = async (req, res, next) => {
 
     return res.status(201).json({
       success: true,
-      message: "Complaint registered successfully",
+      message: officer
+        ? "Complaint registered successfully."
+        : "Complaint registered successfully. No officer is currently assigned for your area. The administrator has been notified.",
       newComplaint,
     });
   } catch (error) {
@@ -191,7 +200,6 @@ export const registerComplaintByCitizen = async (req, res, next) => {
     });
   }
 };
-
 // get all user complaints logic goes here
 export const getMycomplaints = async (req, res) => {
   try {

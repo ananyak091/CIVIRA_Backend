@@ -45,27 +45,31 @@ const complaintSchema = new mongoose.Schema(
 
     description: {
       type: String,
+      default: "",
     },
 
     additionalNotes: {
       type: String,
+      default: "",
     },
 
+    // Officer will be assigned later if not available
     assignedOfficer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Officer",
-      required: true,
+      default: null,
     },
 
     complaint_status: {
       type: String,
       enum: [
+        "Waiting for Officer",
         "Registered",
         "Pending",
+        "In Progress",
         "Resolved",
         "Rejected",
         "Success",
-        "In Progress",
       ],
       default: "Registered",
     },
