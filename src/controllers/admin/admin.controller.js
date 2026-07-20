@@ -1,16 +1,138 @@
 import Officer from "#src/models/officer/officer.model.js";
 import bcrypt from "bcryptjs";
+import { Complaint } from "#src/models/complaints.model.js";
+import AdminNotification from "#src/models/admin/adminNotification.model.js";
 
 /**
  * @desc Dashboard Analytics
  * @route GET /api/admin/dashboard
  */
+
+// export const getUnreadNotificationCount = async (req, res) => {
+//   try {
+//     const unreadCount = await AdminNotification.countDocuments({
+//       status: "Pending",
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       unreadCount,
+//     });
+//   } catch (error) {
+//     console.log(error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 export const getDashboard = async (req, res) => {
   try {
+    const [
+      totalOfficers,
+      activeOfficers,
+      suspendedOfficers,
+
+      totalComplaints,
+      pendingComplaints,
+      inProgressComplaints,
+      resolvedComplaints,
+      waitingForOfficerComplaints,
+    ] = await Promise.all([
+      Officer.countDocuments(),
+
+      Officer.countDocuments({
+        status: "Active",
+      }),
+
+      Officer.countDocuments({
+        status: "Suspended",
+      }),
+
+      Complaint.countDocuments(),
+
+      Complaint.countDocuments({
+        complaint_status: "Pending",
+      }),
+
+      Complaint.countDocuments({
+        complaint_status: "In Progress",
+      }),
+
+      Complaint.countDocuments({
+        complaint_status: "Resolved",
+      }),
+
+      Complaint.countDocuments({
+        complaint_status: "Waiting for Officer",
+      }),
+    ]);
+
     return res.status(200).json({
       success: true,
       message: "Dashboard Data",
-      data: {},
+      data: {
+        officers: {
+          total: totalOfficers,
+          active: activeOfficers,
+          suspended: suspendedOfficers,
+        },
+
+        complaints: {
+          total: totalComplaints,
+          pending: pendingComplaints,
+          inProgress: inProgressComplaints,
+          resolved: resolvedComplaints,
+          waitingForOfficer: waitingForOfficerComplaints,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+/**
+ * @desc Check Ward Availability
+ * @route GET /api/admin/check-ward
+ */
+export const checkWardAvailability = async (req, res) => {
+  try {
+    const { state, city, wardNo } = req.query;
+
+    if (!state || !city || !wardNo) {
+      return res.status(400).json({
+        success: false,
+        message: "State, City and Ward Number are required.",
+      });
+    }
+
+    // Only active officers block a ward
+    const officer = await Officer.findOne({
+      state,
+      city,
+      wardNo,
+      status: "Active",
+    });
+
+    if (officer) {
+      return res.status(200).json({
+        success: true,
+        available: false,
+        message: "An active officer is already assigned to this ward.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      available: true,
+      message: "Ward is available.",
     });
   } catch (error) {
     console.log(error);
@@ -26,43 +148,10 @@ export const getDashboard = async (req, res) => {
  * @desc Create Officer
  * @route POST /api/admin/create-officer
  */
-
-export const checkWardAvailability = async (req, res) => {
-  try {
-    const { state, city, wardNo } = req.query;
-
-    const officer = await Officer.findOne({
-      state,
-      city,
-      wardNo,
-    });
-
-    if (officer) {
-      return res.json({
-        success: true,
-        available: false,
-        message: "Officer already assigned to this ward.",
-      });
-    }
-
-    return res.json({
-      success: true,
-      available: true,
-      message: "Ward is available.",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
-  }
-};
-
 export const createOfficer = async (req, res) => {
   try {
     const { wardNo, city, state } = req.body;
 
-    // Validate
     if (!wardNo || !city || !state) {
       return res.status(400).json({
         success: false,
@@ -70,24 +159,25 @@ export const createOfficer = async (req, res) => {
       });
     }
 
-    // Check if an officer already exists for this ward
+    // Check if an ACTIVE officer already exists
     const existingOfficer = await Officer.findOne({
       state,
       city,
       wardNo,
+      status: "Active",
     });
 
     if (existingOfficer) {
       return res.status(400).json({
         success: false,
-        message: "An officer is already assigned to this ward.",
+        message: "An active officer is already assigned to this ward.",
       });
     }
 
     // Generate Officer ID
-    const officerId = `OFF-${state.substring(0, 2).toUpperCase()}-${city
-      .substring(0, 3)
-      .toUpperCase()}-${wardNo}`;
+    const officerId = `OFF-${state
+      .substring(0, 2)
+      .toUpperCase()}-${city.substring(0, 3).toUpperCase()}-${wardNo}`;
 
     // Generate Temporary Password
     const tempPassword = Math.random().toString(36).slice(-8);
@@ -95,7 +185,7 @@ export const createOfficer = async (req, res) => {
     // Hash Password
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    // Save Officer
+    // Create Officer
     const officer = await Officer.create({
       officerId,
       password: hashedPassword,
@@ -103,13 +193,21 @@ export const createOfficer = async (req, res) => {
       wardNo,
       city,
       state,
+      status: "Active",
     });
+
+    // -----------------------------
+    // TODO (Recommended for CIVIRA)
+    // Automatically assign all
+    // waiting complaints of this
+    // ward to this officer.
+    // -----------------------------
 
     return res.status(201).json({
       success: true,
       message: "Officer Created Successfully",
       officerId,
-      password: tempPassword, // Send once so the admin can note it down
+      password: tempPassword,
       officer,
     });
   } catch (error) {
@@ -121,17 +219,17 @@ export const createOfficer = async (req, res) => {
     });
   }
 };
-
 /**
  * @desc Get All Officers
  * @route GET /api/admin/officers
  */
-
 export const getAllOfficers = async (req, res) => {
   try {
     const officers = await Officer.find()
       .sort({ createdAt: -1 })
-      .select("officerId intialPassword wardNo city state createdAt updatedAt");
+      .select(
+        "officerId intialPassword wardNo city state status createdAt updatedAt",
+      );
 
     return res.status(200).json({
       success: true,
@@ -154,13 +252,43 @@ export const getAllOfficers = async (req, res) => {
 export const updateOfficer = async (req, res) => {
   try {
     const { id } = req.params;
+    const { state, city, wardNo } = req.body;
 
-    // TODO:
-    // Update Officer
+    const officer = await Officer.findById(id);
+
+    if (!officer) {
+      return res.status(404).json({
+        success: false,
+        message: "Officer not found.",
+      });
+    }
+
+    // Prevent duplicate ACTIVE officer
+    const duplicateOfficer = await Officer.findOne({
+      _id: { $ne: id },
+      state,
+      city,
+      wardNo,
+      status: "Active",
+    });
+
+    if (duplicateOfficer) {
+      return res.status(400).json({
+        success: false,
+        message: "Another active officer already exists for this ward.",
+      });
+    }
+
+    officer.state = state;
+    officer.city = city;
+    officer.wardNo = wardNo;
+
+    await officer.save();
 
     return res.status(200).json({
       success: true,
-      message: "Officer Updated Successfully",
+      message: "Officer updated successfully.",
+      officer,
     });
   } catch (error) {
     console.log(error);
@@ -173,11 +301,10 @@ export const updateOfficer = async (req, res) => {
 };
 
 /**
- * @desc Delete Officer
- * @route DELETE /api/admin/officers/:id
+ * @desc Suspend / Activate Officer
+ * @route PATCH /api/admin/officers/:id/status
  */
-
-export const deleteOfficer = async (req, res) => {
+export const toggleOfficerStatus = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -186,15 +313,20 @@ export const deleteOfficer = async (req, res) => {
     if (!officer) {
       return res.status(404).json({
         success: false,
-        message: "Officer not found",
+        message: "Officer not found.",
       });
     }
 
-    await Officer.findByIdAndDelete(id);
+    officer.status = officer.status === "Active" ? "Suspended" : "Active";
+
+    await officer.save();
 
     return res.status(200).json({
       success: true,
-      message: "Officer Deleted Successfully",
+      message: `Officer ${
+        officer.status === "Active" ? "activated" : "suspended"
+      } successfully.`,
+      officer,
     });
   } catch (error) {
     console.log(error);

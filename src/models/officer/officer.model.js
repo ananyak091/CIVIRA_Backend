@@ -13,6 +13,7 @@ const officerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     intialPassword: {
       type: String,
       required: true,
@@ -40,9 +41,11 @@ const officerSchema = new mongoose.Schema(
       default: "officer",
     },
 
-    isActive: {
-      type: Boolean,
-      default: true,
+    // Officer Status
+    status: {
+      type: String,
+      enum: ["Active", "Suspended"],
+      default: "Active",
     },
 
     isFirstLogin: {
@@ -60,8 +63,21 @@ const officerSchema = new mongoose.Schema(
   },
 );
 
-// One officer per ward
-officerSchema.index({ state: 1, city: 1, wardNo: 1 }, { unique: true });
+// Only ONE ACTIVE officer per ward
+officerSchema.index(
+  {
+    state: 1,
+    city: 1,
+    wardNo: 1,
+    status: 1,
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "Active",
+    },
+  },
+);
 
 const Officer = mongoose.model("Officer", officerSchema);
 
